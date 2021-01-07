@@ -11,5 +11,5 @@ i3-ratiosplit will look for a configuration file in `~/.config/i3/ratiosplit.ini
 ratio = 0.33
 log_file_level = info # off, error, warn, info, debug, trace
 log_file = "~/.config/i3/ratiosplit.log"
-log_console_level = none # off, error, warn, info, debug, trace
+log_console_level = off # off, error, warn, info, debug, trace
 ```

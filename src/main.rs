@@ -19,7 +19,7 @@ fn main() {
     let settings = load_settings();
     setup_logger(&settings);
 
-    info!("Starting i3 goldenmode, connecting to i3");
+    info!("Starting i3 ratiosplit, connecting to i3");
 
     let (mut connection, mut listener) = match setup_i3_connection() {
         Ok(t) => t,
@@ -46,10 +46,9 @@ fn main() {
                     info!("New window created {:?}", container.name);
                     trace!("Container properties: {:?}", container);
                     handle_child(&mut connection, container);
-                    continue;
                 }
                 _ => {
-                    info!(
+                    trace!(
                         "Ignoring event {:?}: {:?}",
                         event_info.change, event_info.container.name
                     );
@@ -96,7 +95,7 @@ fn setup_i3_connection() -> Result<(I3Connection, I3EventListener), EstablishErr
     let connection = I3Connection::connect()?;
     info!("Listener connecting");
     let listener = I3EventListener::connect()?;
-    return Ok((connection, listener));
+    Ok((connection, listener))
 }
 
 fn handle_child(connection: &mut I3Connection, new_node: Node) {
@@ -117,16 +116,20 @@ fn handle_child(connection: &mut I3Connection, new_node: Node) {
 
         // If the parent is not a container or is not a splitv/h, there's nothing to resize
         if !matches!(parent, Node { nodetype: NodeType::Con, layout: NodeLayout::SplitH, .. } |
-                             Node { nodetype: NodeType::Con, layout: NodeLayout::SplitV, .. })
+                             Node { nodetype: NodeType::Con, layout: NodeLayout::SplitV, .. } |
+                             Node { nodetype: NodeType::Workspace, layout: NodeLayout::SplitH, .. } |
+                             Node { nodetype: NodeType::Workspace, layout: NodeLayout::SplitV, .. })
         {
-            trace!("Parent node is type {:?}, not resizing", parent.nodetype);
+            info!("Parent node is type {:?}, not resizing", parent.nodetype);
+            trace!("Parent properties: {:?}", parent);
             return;
         }
 
         // If there are not 2 children in this node, we can't resize one for golden mode,
         // and would likely just annoy people if we did. Skip.
         if parent.nodes.len() != 2 {
-            trace!("Parent node has {} children, skipping", parent.nodes.len());
+            info!("Parent node has {} children, skipping", parent.nodes.len());
+            trace!("Parent properties: {:?}", parent);
             return;
         }
 
@@ -194,7 +197,7 @@ fn handle_child(connection: &mut I3Connection, new_node: Node) {
             return;
         }
 
-        trace!("Resized successfully");
+        info!("Resized {:?} successfully", new_node.name);
 
         fn focus_id(node: &Node) -> String {
             format!("[id={}] focus", node.id)
@@ -204,7 +207,7 @@ fn handle_child(connection: &mut I3Connection, new_node: Node) {
         trace!("Tree: {:?}", tree);
     }
 
-    fn find_parent<'a>(child_id: i64, node: &'a Node) -> Option<&'a Node> {
+    fn find_parent(child_id: i64, node: &Node) -> Option<&Node> {
         // In order to find the child node, we get the tree and loop through all the children.
         // There are a few possible failure conditions:
         // 1. The node isn't in the tree
@@ -219,6 +222,6 @@ fn handle_child(connection: &mut I3Connection, new_node: Node) {
             }
         }
 
-        return None;
+        None
     }
 }
