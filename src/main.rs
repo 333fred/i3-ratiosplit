@@ -76,14 +76,13 @@ fn setup_logger(settings: &Settings) {
         ))
     }
 
-    loggers.push(
-        TermLogger::new(
-            settings.log_console_level,
-            simplelog::Config::default(),
-            TerminalMode::Mixed,
-        )
-        .unwrap(),
-    );
+    if let Some(console) = TermLogger::new(
+        settings.log_console_level,
+        simplelog::Config::default(),
+        TerminalMode::Mixed,
+    ) {
+        loggers.push(console);
+    }
 
     CombinedLogger::init(loggers).unwrap();
 
